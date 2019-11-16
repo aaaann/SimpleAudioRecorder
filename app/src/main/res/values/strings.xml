@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SimpleAudioRecorder</string>
+    <string name="notification_channel_name">Channel_1</string>
+    <string name="notification_channel_description">Channel_1 description</string>
+</resources>
