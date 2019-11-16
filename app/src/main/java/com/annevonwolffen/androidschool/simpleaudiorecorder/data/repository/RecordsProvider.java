@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import com.annevonwolffen.androidschool.simpleaudiorecorder.data.model.RecordModel;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 public class RecordsProvider {
@@ -49,10 +50,15 @@ public class RecordsProvider {
 
         private List<RecordModel> getData() {
             // todo read dir where records from this app are being created
-            File dir = Environment.getExternalStorageDirectory();
+            File dir = new File(Environment.getExternalStorageDirectory() + "/SimpleAudioRecorder");
             // todo loop over all files in dir and creating record models on them (how to get duration ???)
-            //return dir != null ? dir.list() : new String[0];
-            return null;
+            List<RecordModel> records = new ArrayList<>();
+            if (dir.exists()) {
+                for (String s : dir.list()) {
+                    records.add(new RecordModel(s, s)); //todo: find out how to get other params from files - i need duration
+                }
+            }
+            return records;
         }
     }
 

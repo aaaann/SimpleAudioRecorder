@@ -28,8 +28,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="record..."
-            android:layout_marginTop="5dp"
-            android:textAppearance="@style/TextAppearance_Compat_Notification"/>
+            android:layout_marginTop="5dp" />
 
     </LinearLayout>
 
