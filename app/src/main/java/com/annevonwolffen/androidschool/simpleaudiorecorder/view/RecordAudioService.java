@@ -52,9 +52,11 @@ public class RecordAudioService extends Service {
             if (!TextUtils.isEmpty(intent.getAction())) {
                 switch (intent.getAction()) {
                     case ACTION_PAUSE:
+                        Log.d(TAG, "onStartCommand: ACTION_PAUSE");
                         pauseRecord();
                         break;
                     case ACTION_STOP:
+                        Log.d(TAG, "onStartCommand: ACTION_STOP");
                         stopRecord();
                         Intent returnToActivityIntent = new Intent(this, MainActivity.class);
                         startActivity(returnToActivityIntent);
@@ -64,8 +66,9 @@ public class RecordAudioService extends Service {
             } else {
                 // start record
                 // etwas mit media recorder
-                startRecord(intent.getStringExtra(EXTRA_FILENAME));
+                Log.d(TAG, "onStartCommand: before_start record");
                 startForeground(startId, createNotification(mIsRecording));
+                startRecord(intent.getStringExtra(EXTRA_FILENAME));
             }
         }
 
@@ -91,6 +94,7 @@ public class RecordAudioService extends Service {
     }
 
     private Notification createNotification(boolean isRecording) {
+        Log.d(TAG, "createNotification: ");
         // todo: создать pending intent'ы
         // 1) pending intent for return to activity
         Intent intent = new Intent(this, MainActivity.class);
@@ -113,15 +117,19 @@ public class RecordAudioService extends Service {
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_mic_black_24dp)
+                .setContentTitle("SimpleAudioRecorder")
+                .setContentText("recording...")
                 .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
                 .setContentIntent(pendingIntent)
-                .setCustomContentView(remoteViews)
+                .addAction(R.drawable.ic_stop_black_24dp, "Stop record", stopPendingIntent)
+                //.setCustomContentView(remoteViews)
                 .build();
     }
 
     private void updateNotification(boolean isRecording) {
         Notification notification = createNotification(isRecording);
 
+        Log.d(TAG, "updateNotification: ");
         NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(this);
         notificationManagerCompat.notify(NOTIFICATION_ID, notification);
     }
@@ -141,6 +149,7 @@ public class RecordAudioService extends Service {
             e.printStackTrace();
         }
         mRecorder.start();   // Recording is now started
+        Log.d(TAG, "startRecord: ");
         mIsRecording = true;
         updateNotification(mIsRecording);
     }

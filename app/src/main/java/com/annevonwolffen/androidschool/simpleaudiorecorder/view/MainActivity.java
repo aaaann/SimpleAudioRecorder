@@ -102,6 +102,7 @@ public class MainActivity extends AppCompatActivity implements IMainView {
                 } else {
                     Toast.makeText(getApplicationContext(), "You denied read external storage permission.", Toast.LENGTH_LONG).show();
                 }
+                break;
             }
             case WRITE_EXT_STORAGE_REQ_CODE: {
                 int grantResultsLength = grantResults.length;
@@ -112,6 +113,7 @@ public class MainActivity extends AppCompatActivity implements IMainView {
                 } else {
                     Toast.makeText(getApplicationContext(), "You denied write external storage permission.", Toast.LENGTH_LONG).show();
                 }
+                break;
             }
 
             case RECORD_AUDIO_REQ_CODE: {
@@ -123,6 +125,8 @@ public class MainActivity extends AppCompatActivity implements IMainView {
                 } else {
                     Toast.makeText(getApplicationContext(), "You denied record audio permission.", Toast.LENGTH_LONG).show();
                 }
+
+                break;
             }
         }
     }
@@ -160,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements IMainView {
 
     private String createFileForRecord() {
         File folder = new File(Environment.getExternalStorageDirectory() + "/SimpleAudioRecorder");
-        File file = new File(folder + "/record_" + System.currentTimeMillis() + ".mp4");
+        File file = new File(folder + "/record_" + System.currentTimeMillis() + ".mp3");
         if (!folder.exists()) {
             folder.mkdirs();
         }
