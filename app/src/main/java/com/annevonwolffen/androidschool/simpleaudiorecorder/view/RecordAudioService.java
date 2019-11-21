@@ -25,7 +25,7 @@ import static com.annevonwolffen.androidschool.simpleaudiorecorder.view.MainActi
 
 public class RecordAudioService extends Service {
 
-
+    private static OnRecordListener onRecordListener;
     private static final String CHANNEL_ID = "Channel_1";
     private static final String TAG = "RecordAudioService";
     private static final int NOTIFICATION_ID = 1;
@@ -34,8 +34,7 @@ public class RecordAudioService extends Service {
     private static final String ACTION_STOP = "ActionStopRecord";
 
     private MediaRecorder mRecorder = null;
-    private boolean mIsRecording = false;
-    private boolean mIsPlaying = false;
+    private boolean mIsRecording;
 
     @Override
     public void onCreate() {
@@ -46,7 +45,7 @@ public class RecordAudioService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "onStartCommand: ");
+        Log.d(TAG, "onStartCommand() called with: intent = [" + intent + "], flags = [" + flags + "], startId = [" + startId + "]");
 
         if (intent != null) {
             if (!TextUtils.isEmpty(intent.getAction())) {
@@ -58,17 +57,18 @@ public class RecordAudioService extends Service {
                     case ACTION_STOP:
                         Log.d(TAG, "onStartCommand: ACTION_STOP");
                         stopRecord();
-                        Intent returnToActivityIntent = new Intent(this, MainActivity.class);
-                        startActivity(returnToActivityIntent);
-                        stopForeground(true); // todo: updateNotification (make new layout for this issue and call another create notification method)
+//                        Intent returnToActivityIntent = new Intent(this, MainActivity.class);
+//                        startActivity(returnToActivityIntent);
+                        //stopForeground(true); // todo: updateNotification (make new layout for this issue and call another create notification method)
+                        stopSelf();
                         break;
                 }
             } else {
                 // start record
                 // etwas mit media recorder
                 Log.d(TAG, "onStartCommand: before_start record");
-                startForeground(startId, createNotification(mIsRecording));
                 startRecord(intent.getStringExtra(EXTRA_FILENAME));
+                startForeground(startId, createNotification(mIsRecording));
             }
         }
 
@@ -105,7 +105,7 @@ public class RecordAudioService extends Service {
         PendingIntent pausePendingIntent = PendingIntent.getService(this, 0, pauseIntent, 0);
         // 3) pending intent for stop and save record
         Intent stopIntent = new Intent(this, RecordAudioService.class);
-        pauseIntent.setAction(ACTION_STOP);
+        stopIntent.setAction(ACTION_STOP);
         PendingIntent stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, 0);
 
         RemoteViews remoteViews = new RemoteViews(getPackageName(), R.layout.notification);
@@ -119,9 +119,10 @@ public class RecordAudioService extends Service {
                 .setSmallIcon(R.drawable.ic_mic_black_24dp)
                 .setContentTitle("SimpleAudioRecorder")
                 .setContentText("recording...")
-                .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
-                .setContentIntent(pendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+//                .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
                 .addAction(R.drawable.ic_stop_black_24dp, "Stop record", stopPendingIntent)
+                .setContentIntent(pendingIntent)
                 //.setCustomContentView(remoteViews)
                 .build();
     }
@@ -140,7 +141,8 @@ public class RecordAudioService extends Service {
     private void startRecord(String filename) {
         mRecorder = new MediaRecorder();
         mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4
+        );
         mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         mRecorder.setOutputFile(filename);
         try {
@@ -152,6 +154,7 @@ public class RecordAudioService extends Service {
         Log.d(TAG, "startRecord: ");
         mIsRecording = true;
         updateNotification(mIsRecording);
+        //onRecordListener.onStartRecord();
     }
 
     private void pauseRecord() {
@@ -177,6 +180,7 @@ public class RecordAudioService extends Service {
         mRecorder.stop();
         mRecorder.release();
         mRecorder = null;
+        //onRecordListener.onFinishRecord();
     }
 
     @Override
@@ -195,4 +199,9 @@ public class RecordAudioService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
+}
+
+interface OnRecordListener {
+    void onStartRecord();
+    void onFinishRecord();
 }

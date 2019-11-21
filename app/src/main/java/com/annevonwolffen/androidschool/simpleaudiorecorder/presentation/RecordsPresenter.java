@@ -13,41 +13,52 @@ import java.util.List;
 
 public class RecordsPresenter {
 
-    private final WeakReference<IMainView> mMainActivityWeakReference;
-    private final RecordsProvider mRecordsProvider;
-    private List<RecordModel> mRecords = new ArrayList<>();
+  private final WeakReference<IMainView> mMainActivityWeakReference;
+  private final RecordsProvider mRecordsProvider;
+  private List<RecordModel> mRecords = new ArrayList<>();
+  // todo: vielleicht keep current playing element 
 
-    public RecordsPresenter(@NonNull IMainView mainView, @NonNull RecordsProvider provider) {
-        mMainActivityWeakReference = new WeakReference<>(mainView);
-        mRecordsProvider = provider;
-    }
-
-
-    public void loadData() {
-        mRecordsProvider.loadRecords(new RecordsProvider.OnLoadingFinishListener() {
-            @Override
-            public void onFinish(List<RecordModel> recordModels) {
-                mRecords = recordModels;
-                mMainActivityWeakReference.get().showData();
-            }
-        });
-    }
+  public RecordsPresenter(@NonNull IMainView mainView, @NonNull RecordsProvider provider) {
+    mMainActivityWeakReference = new WeakReference<>(mainView);
+    mRecordsProvider = provider;
+  }
 
 
-    /**
-     * Метод для отвязки прикрепленной View.
-     */
-    public void detachView() {
-        mMainActivityWeakReference.clear();
-    }
+  public void loadData() {
+    mRecordsProvider.loadRecords(new RecordsProvider.OnLoadingFinishListener() {
+      @Override
+      public void onFinish(List<RecordModel> recordModels) {
+        mRecords = recordModels;
+        mMainActivityWeakReference.get().showData();
+      }
+    });
+  }
 
-    public void onBindRecordRowViewAtPosition(int position, IRecordRowView rowView) {
-        RecordModel model = mRecords.get(position);
-        rowView.setRecordName(model.getName());
-        rowView.setRecordDuration(model.getDuration());
-    }
 
-    public int getRecordRowsCount() {
-        return mRecords.size();
-    }
+  /**
+   * Метод для отвязки прикрепленной View.
+   */
+  public void detachView() {
+    mMainActivityWeakReference.clear();
+  }
+
+  public void onBindRecordRowViewAtPosition(int position, IRecordRowView rowView) {
+    RecordModel model = mRecords.get(position);
+    rowView.setRecordName(model.getName());
+    rowView.setRecordDuration(model.getDuration());
+    //rowView.setRecordButtonIcon(); //todo: implement: set icon depend on model.isPlaying
+    rowView.setClickListener(position);
+  }
+
+  public int getRecordRowsCount() {
+    return mRecords.size();
+  }
+
+
+  public void onRecordItemClicked(int position) {
+    RecordModel model = mRecords.get(position);
+    model.setIsPlaying(!model.isPlaying());
+    mMainActivityWeakReference.get().startPlay(model.getName());
+  }
+
 }
