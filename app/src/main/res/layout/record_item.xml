@@ -16,7 +16,7 @@
         android:background="@color/colorLightGreen">
 
         <Button
-            android:id="@+id/iv_icon"
+            android:id="@+id/btn_play"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_marginRight="40dp"
@@ -26,7 +26,7 @@
             android:id="@+id/tv_record_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_toRightOf="@+id/iv_icon"
+            android:layout_toRightOf="@+id/btn_play"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             tools:text="Record_1233445" />
 
@@ -35,8 +35,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@id/tv_record_name"
-            android:layout_alignBottom="@id/iv_icon"
-            android:layout_toRightOf="@+id/iv_icon"
+            android:layout_alignBottom="@id/btn_play"
+            android:layout_toRightOf="@+id/btn_play"
             android:gravity="bottom"
             tools:text="06:21" />
     </RelativeLayout>

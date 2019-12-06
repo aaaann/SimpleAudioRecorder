@@ -6,7 +6,9 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -16,6 +18,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,6 +26,8 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.annevonwolffen.androidschool.simpleaudiorecorder.R;
+
+import java.io.IOException;
 
 import static com.annevonwolffen.androidschool.simpleaudiorecorder.view.MainActivity.EXTRA_FILENAME;
 import static com.annevonwolffen.androidschool.simpleaudiorecorder.view.MainActivity.EXTRA_IS_PLAYING;
@@ -37,6 +42,7 @@ public class PlayAudioService extends Service {
     private static final int NOTIFICATION_ID = 1;
 
     public static final int MSG_START_PLAY = 201;
+    public static final int MSG_PAUSE_OR_CONTINUE_PLAY = 202;
     private static final String ACTION_PAUSE = "ActionPause";
 
     private MediaPlayer mPlayer;
@@ -52,11 +58,15 @@ public class PlayAudioService extends Service {
         public void handleMessage(@NonNull Message msg) {
             switch (msg.what) {
                 case MSG_START_PLAY:
+                    Log.d(TAG, "handleMessage() called with: msg = [" + msg + "]");
                     mMainActivityMessenger = msg.replyTo;
                     Bundle bundle = msg.getData();
                     mRecordName = bundle.getString(EXTRA_FILENAME);
 
-                    startPlay(); //todo: implement play using MediaPlayer
+                    startPlay();
+                    break;
+                case MSG_PAUSE_OR_CONTINUE_PLAY:
+                    pausePlay();
                     break;
                 default:
                     super.handleMessage(msg);
@@ -67,10 +77,22 @@ public class PlayAudioService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        initPlayer();
 
         createNotificationChannel();
 
         Log.d(TAG, "onCreate() called");
+    }
+
+    private void initPlayer() {
+        mPlayer = new MediaPlayer();
+        mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                sendMessage();
+                stopForeground(false);
+            }
+        });
     }
 
     @Override
@@ -78,7 +100,7 @@ public class PlayAudioService extends Service {
         Log.d(TAG, "onStartCommand() called with: intent = [" + intent + "], flags = [" + flags + "], startId = [" + startId + "]");
 
         if (intent != null && !TextUtils.isEmpty(intent.getAction())) {
-            switch(intent.getAction()){
+            switch (intent.getAction()) {
                 case ACTION_PAUSE:
                     pausePlay();
                     break;
@@ -87,7 +109,7 @@ public class PlayAudioService extends Service {
 //
 //        startCountdownTimer(100000, 1000);
 
-        //startForeground(startId, createNotification("100"));
+        //startForeground(startId, createNotification());
 
         return START_NOT_STICKY;
     }
@@ -99,6 +121,7 @@ public class PlayAudioService extends Service {
         Log.d(TAG, "onDestroy() called");
 
         if (mPlayer != null) {
+            mPlayer.release();
             mPlayer = null;
         }
     }
@@ -123,7 +146,7 @@ public class PlayAudioService extends Service {
                 CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("SimpleAudioRecorder")
-                .setContentText("playing...")
+                .setContentText("playing...") //todo: set filename
                 .setOnlyAlertOnce(true)
                 .addAction(R.drawable.ic_stop_black_24dp, "Stop play", pausePendingIntent)
                 .setContentIntent(pendingIntent);
@@ -144,24 +167,37 @@ public class PlayAudioService extends Service {
     }
 
     private void startPlay() {
-
-        // todo: start media player
-        mIsPlaying = true;
-        updateNotification();
+        Toast.makeText(this, "playing...", Toast.LENGTH_SHORT).show();
+        if (mPlayer.isPlaying()) {
+            mPlayer.release();
+            stopForeground(true);
+        }
+        try {
+            Uri fileName = Uri.parse(mRecordName);
+            mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            mPlayer.setDataSource(getApplicationContext(), fileName);
+            mPlayer.prepare();
+            mPlayer.start();
+            startForeground(1, createNotification());
+            mIsPlaying = true;
+            updateNotification();
+            sendMessage();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void pausePlay() {
         if (mPlayer != null) {
-            if (mIsPlaying){
-                //mPlayer.pause();
+            if (mPlayer.isPlaying()) {
+                mPlayer.pause();
 
                 mIsPlaying = false;
                 updateNotification();
                 stopForeground(false);
                 sendMessage();
-            }
-            else {
-                //mPlayer.resume();
+            } else {
+                mPlayer.start();
 
                 mIsPlaying = true;
                 updateNotification();
@@ -171,9 +207,13 @@ public class PlayAudioService extends Service {
         }
     }
 
+    /**
+     * оповестить активити о состоянии плеера для отображения соотв. иконки на кнопке элемента
+     */
     private void sendMessage() {
         Bundle bundle = new Bundle();
-        bundle.putBoolean(EXTRA_IS_PLAYING, mIsPlaying);
+        bundle.putBoolean(EXTRA_IS_PLAYING, mPlayer.isPlaying());
+        bundle.putString(EXTRA_FILENAME, mRecordName);
 
         Message message = Message.obtain(null, MSG_PAUSE_PLAY);
         message.setData(bundle);

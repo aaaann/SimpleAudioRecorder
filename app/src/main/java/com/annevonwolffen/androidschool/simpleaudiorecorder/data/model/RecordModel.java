@@ -5,6 +5,7 @@ public class RecordModel {
     private String mDuration;
 
     private boolean mIsPlaying;
+    private boolean mIsClicked;
 
     public RecordModel(String name, String duration) {
         this.mName = name;
@@ -25,5 +26,13 @@ public class RecordModel {
 
     public void setIsPlaying(boolean isPlaying) {
         this.mIsPlaying = isPlaying;
+    }
+
+    public boolean isClicked() {
+        return mIsClicked;
+    }
+
+    public void setIsClicked(boolean isClicked) {
+        this.mIsClicked = isClicked;
     }
 }

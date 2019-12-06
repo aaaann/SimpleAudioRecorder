@@ -26,12 +26,13 @@ import android.widget.Toast;
 import com.annevonwolffen.androidschool.simpleaudiorecorder.R;
 import com.annevonwolffen.androidschool.simpleaudiorecorder.data.repository.RecordsProvider;
 import com.annevonwolffen.androidschool.simpleaudiorecorder.presentation.RecordsPresenter;
+import com.annevonwolffen.androidschool.simpleaudiorecorder.util.ResourceWrapper;
 import com.annevonwolffen.androidschool.simpleaudiorecorder.view.adapters.RecordsAdapter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
 
-public class MainActivity extends AppCompatActivity implements IMainView, OnRecordListener{
+public class MainActivity extends AppCompatActivity implements IMainView, OnRecordListener {
 
     private static final String TAG = "MainActivity";
 
@@ -60,10 +61,10 @@ public class MainActivity extends AppCompatActivity implements IMainView, OnReco
                     Log.d(TAG, "handleMessage() called with: msg = [" + msg + "]");
 
                     // todo: call method of presenter to update button icon on item in rv list
-//                    Bundle bundle = msg.getData();
-//                    String timerText = bundle.getString(EXTRA_TIMER);
-//
-//                    mTimerTextView.setText(timerText);
+                    Bundle bundle = msg.getData();
+                    boolean isPlaying = bundle.getBoolean(EXTRA_IS_PLAYING);
+                    String currentPlayingRecord = bundle.getString(EXTRA_FILENAME);
+                    mPresenter.onPlayStateChanged(isPlaying, currentPlayingRecord);
                     break;
                 default:
                     super.handleMessage(msg);
@@ -126,6 +127,8 @@ public class MainActivity extends AppCompatActivity implements IMainView, OnReco
                 }
             }
         });
+
+        bindPlayService();
     }
 
     @Override
@@ -172,7 +175,8 @@ public class MainActivity extends AppCompatActivity implements IMainView, OnReco
 
     private void providePresenter() {
         RecordsProvider recordsProvider = new RecordsProvider(this);
-        mPresenter = new RecordsPresenter(this, recordsProvider);
+        ResourceWrapper resourceWrapper = new ResourceWrapper(getApplication().getResources());
+        mPresenter = new RecordsPresenter(this, recordsProvider, resourceWrapper);
     }
 
 
@@ -223,32 +227,50 @@ public class MainActivity extends AppCompatActivity implements IMainView, OnReco
 
     @Override
     public void startPlay(String fileName) {
+        Log.d(TAG, "startPlay() called with: fileName = [" + fileName + "]");
         File file = new File(Environment.getExternalStorageDirectory() + "/SimpleAudioRecorder" + "/" + fileName);
         if (file.exists()) {
             startPlayService(file.getAbsolutePath());
-            mAdapter.notifyDataSetChanged();
-        }
-        else {
+            //mAdapter.notifyDataSetChanged();
+        } else {
             Toast.makeText(this, "File does not exist", Toast.LENGTH_LONG).show();
         }
     }
 
-    private void startPlayService(String fileName) {
+    @Override
+    public void pauseOrContinuePlay() {
         if (mIsServiceBound) {
-            Bundle bundle = new Bundle();
-            bundle.putString(EXTRA_FILENAME, fileName);
-
-            Message message = Message.obtain(null, PlayAudioService.MSG_START_PLAY);
+            Message message = Message.obtain(null, PlayAudioService.MSG_PAUSE_OR_CONTINUE_PLAY);
             message.replyTo = mMainActivityMessenger;
-            message.setData(bundle);
             try {
                 mServiceMessenger.send(message);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
-        } else {
-            Intent bindIntent = new Intent(this, PlayAudioService.class);
-            bindService(bindIntent, mServiceConnection, BIND_AUTO_CREATE);
+        }
+    }
+
+    private void bindPlayService() {
+        Log.d(TAG, "bindPlayService() called");
+        Intent bindIntent = new Intent(this, PlayAudioService.class);
+        bindService(bindIntent, mServiceConnection, BIND_AUTO_CREATE);
+    }
+
+    private void startPlayService(String fileName) {
+        Log.d(TAG, "startPlayService() called with: fileName = [" + fileName + "], mIsServiceBound " + mIsServiceBound);
+
+        Bundle bundle = new Bundle();
+        bundle.putString(EXTRA_FILENAME, fileName);
+
+        if (mIsServiceBound) {
+            Message message = Message.obtain(null, PlayAudioService.MSG_START_PLAY);
+            message.setData(bundle);
+            message.replyTo = mMainActivityMessenger;
+            try {
+                mServiceMessenger.send(message);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -260,5 +282,15 @@ public class MainActivity extends AppCompatActivity implements IMainView, OnReco
     @Override
     public void onFinishRecord() {
         startRecordButton.setEnabled(true);
+    }
+
+    @Override
+    protected void onStop() {
+        Log.d(TAG, "onStop() called");
+        super.onStop();
+//        if (mIsServiceBound) {
+//            unbindService(mServiceConnection);
+//            mIsServiceBound = false;
+//        }
     }
 }

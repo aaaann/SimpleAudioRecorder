@@ -8,5 +8,6 @@ public interface IMainView {
 
   void startPlay(String fileName);
 
+  void pauseOrContinuePlay();
 
 }
