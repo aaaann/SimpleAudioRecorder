@@ -41,8 +41,10 @@ public class RecordsPresenter {
     }
 
     public void onPlayStateChanged(boolean state, String filename) {
+        String recordName = filename.substring(filename.lastIndexOf('/') + 1);
+        Log.d(TAG, "onPlayStateChanged() called with: state = [" + state + "], filename = [" + filename + "]");
         for (RecordModel model : mRecords) {
-            if (model.getName().equals(filename)) {
+            if (model.getName().equals(recordName)) {
                 model.setIsPlaying(state);
             }
         }

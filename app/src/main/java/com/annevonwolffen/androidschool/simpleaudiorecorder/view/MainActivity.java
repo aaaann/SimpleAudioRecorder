@@ -58,11 +58,11 @@ public class MainActivity extends AppCompatActivity implements IMainView, OnReco
         public void handleMessage(@NonNull Message msg) {
             switch (msg.what) {
                 case MSG_PAUSE_PLAY:
-                    Log.d(TAG, "handleMessage() called with: msg = [" + msg + "]");
 
                     // todo: call method of presenter to update button icon on item in rv list
                     Bundle bundle = msg.getData();
                     boolean isPlaying = bundle.getBoolean(EXTRA_IS_PLAYING);
+                    Log.d(TAG, "handleMessage: isPlaying " + isPlaying);
                     String currentPlayingRecord = bundle.getString(EXTRA_FILENAME);
                     mPresenter.onPlayStateChanged(isPlaying, currentPlayingRecord);
                     break;

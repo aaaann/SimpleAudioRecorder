@@ -18,7 +18,6 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -58,11 +57,10 @@ public class PlayAudioService extends Service {
         public void handleMessage(@NonNull Message msg) {
             switch (msg.what) {
                 case MSG_START_PLAY:
-                    Log.d(TAG, "handleMessage() called with: msg = [" + msg + "]");
                     mMainActivityMessenger = msg.replyTo;
                     Bundle bundle = msg.getData();
                     mRecordName = bundle.getString(EXTRA_FILENAME);
-
+                    Log.d(TAG, "handleMessage: mRecordName " + mRecordName);
                     startPlay();
                     break;
                 case MSG_PAUSE_OR_CONTINUE_PLAY:
@@ -89,8 +87,9 @@ public class PlayAudioService extends Service {
         mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
+                Log.d(TAG, "onCompletion() called with: mp = [" + mp + "]");
                 sendMessage();
-                stopForeground(false);
+                stopForeground(true);
             }
         });
     }
@@ -167,7 +166,7 @@ public class PlayAudioService extends Service {
     }
 
     private void startPlay() {
-        Toast.makeText(this, "playing...", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "startPlay() called with player playing " + mPlayer.isPlaying());
         if (mPlayer.isPlaying()) {
             mPlayer.release();
             stopForeground(true);
@@ -188,13 +187,14 @@ public class PlayAudioService extends Service {
     }
 
     private void pausePlay() {
+        Log.d(TAG, "pausePlay() called with player playing " + mPlayer.isPlaying());
         if (mPlayer != null) {
             if (mPlayer.isPlaying()) {
                 mPlayer.pause();
 
                 mIsPlaying = false;
                 updateNotification();
-                stopForeground(false);
+                stopForeground(true);
                 sendMessage();
             } else {
                 mPlayer.start();
